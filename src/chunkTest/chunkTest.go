@@ -1,17 +1,26 @@
 package main
 
 import (
-	"fmt"
-	"github.com/valyala/fasthttp"
+	"bytes"
+	"math/rand"
+	"time"
 )
 
 func main() {
-	data := "this is data"
-	code, body, err := fasthttp.Post([]byte(data), "http://127.0.0.1:8001/", nil)
-	if err != nil {
-		fmt.Println(err)
-		return
+
+}
+
+func GetCode(codeLen int) string {
+	// 1. 定义原始字符串
+	rawStr := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_"
+	// 2. 定义一个buf，并且将buf交给bytes往buf中写数据
+	buf := make([]byte, 0, codeLen)
+	b := bytes.NewBuffer(buf)
+	//随机从中获取
+	rand.Seed(time.Now().UnixNano())
+	for rawStrLen := len(rawStr); codeLen > 0; codeLen-- {
+		randNum := rand.Intn(rawStrLen)
+		b.WriteByte(rawStr[randNum])
 	}
-	fmt.Println("Code: ", code)
-	fmt.Println("body: ", string(body))
+	return b.String()
 }

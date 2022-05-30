@@ -15,6 +15,22 @@ import (
 */
 
 func ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("timestest env recv request. time:" + time.Now().String())
+	fmt.Println(r.Method)
+	fmt.Println(r.Header)
+	fmt.Println(r.UserAgent())
+	fmt.Println(r.URL)
+	fmt.Println()
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("server read failed. err : ", err)
+	}
+
+	if body != nil {
+		fmt.Println(string(body))
+	}
+
 	w.Header().Set("Content-Type", "text/plain")
 	fmt.Fprintf(w, "Method: %s\n", r.Method)
 	fmt.Fprintf(w, "Protocol: %s\n", r.Proto)
@@ -28,23 +44,18 @@ func ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "\nHeaders:\n")
 	fmt.Fprintf(w, "key's len:%d\n", len(r.Header.Get("key")))
 
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		fmt.Println("server read failed. err : ", err)
-	}
-
-	if body != nil {
-		//fmt.Println(string(body))
-	}
 	// 休眠代表服务端处理时间
-	time.Sleep(time.Minute * 15)
+	time.Sleep(time.Minute * 0)
 }
 
 func main() {
 	port := flag.String("port", "8001", "http port")
 	flag.Parse()
 	fmt.Println("port:", *port)
-	http.HandleFunc("/http_proxy_test", ServeHTTP)
+	http.HandleFunc("/proxytest_header", ServeHTTP)
+	http.HandleFunc("/9", ServeHTTP)
+	http.HandleFunc("/test99", ServeHTTP)
+	http.HandleFunc("/test_new99", ServeHTTP)
 	err := http.ListenAndServe(":"+*port, nil)
 	if err != nil {
 		fmt.Println("server listen failed. err : ", err)

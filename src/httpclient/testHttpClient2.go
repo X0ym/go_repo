@@ -74,9 +74,9 @@ func iptablesTest2(url string, times int, num int) {
 }
 func main() {
 
-	url := flag.String("url", "http://10.145.35.25:2046/http_proxy_test", "http url")
-	times := flag.Int("times", 100, "execute times")
-	num := flag.Int("num", 10, "repeat num")
+	url := flag.String("url", "http://127.0.0.1:2046/http_proxy_test", "http url")
+	times := flag.Int("times", 1, "execute times")
+	num := flag.Int("num", 1, "repeat num")
 	flag.Parse()
 	fmt.Println("url:", *url)
 	fmt.Println("goroutine:", *times)

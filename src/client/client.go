@@ -14,7 +14,7 @@ import (
 
 // 大请求测试
 func httpPost2(urlStr string, num int, body int) {
-	data := GetCode(body)
+	data := getCode(body)
 	//fmt.Printf("key=%s\n", data)
 	for {
 		if num <= 0 {
@@ -30,14 +30,16 @@ func httpPost2(urlStr string, num int, body int) {
 		}
 
 		fmt.Println(resp.StatusCode)
-		data, err := io.ReadAll(resp.Body)
+		resdata, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return
 		}
 		times := time.Since(t1)
+		fmt.Println("ContentLength:", resp.ContentLength)
 		fmt.Println("总耗时: ", times)
-		//fmt.Println(string(data))
-		fmt.Println("body len:", len(data))
+		fmt.Println("body: ", string(resdata))
+		fmt.Println("res body len:", len(resdata))
+		time.Sleep(100 * time.Millisecond)
 		num--
 	}
 
@@ -49,7 +51,7 @@ func httpGet(url string, num int) {
 	if err != nil {
 		fmt.Println("create request failed")
 	}
-	req.Header.Add("key", GetCode(12*1024))
+	req.Header.Add("key", getCode(12*1024))
 	//fmt.Println(req.Header.Get("key"))
 	resp, err1 := client.Do(req)
 	if err1 != nil {
@@ -80,12 +82,16 @@ func iptablesTest2(url string, times int, num int, body int) {
 	}
 }
 func main() {
-	url := flag.String("url", "http://127.0.0.1:2046/", "http url")
-	//url := flag.String("url", "http://10.145.35.25:8001/", "http url")
+	//url := flag.String("url", "http://10.177.125.17:8001/proxytest_header", "http url")
+	url := flag.String("url", "http://10.177.123.78:8001/proxytest_back", "http url")
+	//url := flag.String("url", "http://127.0.0.1:8001/proxytest_chunk", "http url")
+	//url := flag.String("url", "http://10.177.125.17:8001/proxytest_chunk", "http url")
+	//url := flag.String("url", "http://127.0.0.1:2046/proxytest_back", "http url")
+	//url := flag.String("url", "http://10.177.125.17:8001/proxytest_notReadBody", "http url")
 
 	times := flag.Int("times", 1, "execute times")
 	num := flag.Int("num", 1, "repeat num")
-	body := flag.Int("body", 1024*17, "body length in byte")
+	body := flag.Int("body", 20*1024*1024, "body length in byte")
 	flag.Parse()
 	fmt.Println("url:", *url)
 	fmt.Println("goroutine:", *times)
@@ -102,8 +108,7 @@ func getByte2(n int) []byte {
 	return b
 }
 
-// GetCode 获取一个随机用户唯一编号
-func GetCode(codeLen int) string {
+func getCode(codeLen int) string {
 	// 1. 定义原始字符串
 	rawStr := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_"
 	// 2. 定义一个buf，并且将buf交给bytes往buf中写数据

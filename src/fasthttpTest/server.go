@@ -10,13 +10,14 @@ import (
 func main() {
 
 	requestHandler := func(ctx *fasthttp.RequestCtx) {
-		fmt.Fprintf(ctx, "Requested path is %q", ctx.Path())
+		fmt.Println("Requested path is", string(ctx.Path()))
+		fmt.Fprintf(ctx, "Requested path is %q", string(ctx.Path()))
 	}
 
 	// 路由
 	router := fasthttprouter.New()
-	router.GET("/", requestHandler)
-	if err := fasthttp.ListenAndServe(":8001", router.Handler); err != nil {
+	router.GET("/proxytest_header", requestHandler)
+	if err := fasthttp.ListenAndServe(":8002", router.Handler); err != nil {
 		log.Fatalf("fasthttp ListenAndServe failed")
 		return
 	}
