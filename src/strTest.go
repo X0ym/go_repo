@@ -18,4 +18,14 @@ func main() {
 	compare := strings.Compare("0", "unknown")
 	fmt.Println("compare:", compare)
 
+	b := false
+	if b && func1() {
+		fmt.Println("条件测试通过")
+	}
+
+}
+
+func func1() bool {
+	fmt.Println("函数执行")
+	return false
 }
