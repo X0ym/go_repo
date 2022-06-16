@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"go_awesomeProject/src/initTest/utils"
+	"go_awesomeProject/src/StandardLibTest/initTest/utils"
 	"os"
 	"os/exec"
 	"time"

@@ -6,11 +6,11 @@ import (
 	"os"
 )
 
-func main () {
+func main() {
 	// os.Args
 	// 命令行参数解析为字符串切片，第一个参数是执行文件名称
 	if len(os.Args) > 0 {
-		for i , org := range os.Args {
+		for i, org := range os.Args {
 			fmt.Printf("参数 %d : %s\n", i, org)
 		}
 	}
@@ -47,6 +47,6 @@ func main () {
 		--flag=value
 		其中需要特别注意的是 bool 类型的flag参数必须使用等号的方式指定
 
-	 */
+	*/
 
 }

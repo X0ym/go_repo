@@ -1,4 +1,4 @@
-package Test
+package main
 
 import (
 	"fmt"
@@ -15,17 +15,17 @@ func GoroutineTest1() {
 	time.Sleep(time.Millisecond * 100)
 }
 
-func receiveBefore (c chan int) {
+func receiveBefore(c chan int) {
 	//time.Sleep(100 * time.Millisecond)
 	x := <-c
 	fmt.Println("channel recv before :", x)
 }
 
-func receiveBeforeNew (c chan int) {
+func receiveBeforeNew(c chan int) {
 	//time.Sleep(100 * time.Millisecond)
 	x1 := <-c
-	x2 := <- c
-	x3 := <- c
+	x2 := <-c
+	x3 := <-c
 	fmt.Println("channel recv 1 :", x1)
 	fmt.Println("channel recv 2 :", x2)
 	fmt.Println("channel recv 2 :", x3)
@@ -33,7 +33,7 @@ func receiveBeforeNew (c chan int) {
 
 func receiveAfter(c chan int) {
 	//time.Sleep(1000 * time.Millisecond)
-	x := <- c
+	x := <-c
 	fmt.Println("channel recv after :", x)
 }
 

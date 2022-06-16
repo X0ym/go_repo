@@ -4,15 +4,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
 
 func main() {
-	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+	http.HandleFunc("/test", func(w http.ResponseWriter, req *http.Request) {
 
 		reqBody, err := io.ReadAll(req.Body)
 		if err != nil {
 			fmt.Println("read req body failed. err=", err.Error())
 		}
+		time.Sleep(2 * time.Minute)
 		fmt.Printf("req body: %s\n", string(reqBody))
 
 		fmt.Fprintln(w, req.URL.String())

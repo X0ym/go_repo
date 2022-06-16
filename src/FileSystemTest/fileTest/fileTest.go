@@ -28,7 +28,7 @@ func main() {
 	////fmt.Println(info.Name())
 	////fmt.Println(info.Size())
 
-	for i := 0 ; i < 10 ; i ++ {
+	for i := 0; i < 10; i++ {
 		root, err := getPath()
 		if err != nil {
 			return
