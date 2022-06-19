@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
 /**
 
@@ -19,11 +22,76 @@ import "fmt"
 const a = 1 << iota
 
 func main() {
-	//var mu sync.Mutex
-	//
-	//mu.Lock()
-	//
-	//mu.Unlock()
+	counterTest2()
+}
 
-	fmt.Println(a)
+func counterTest1() {
+	var count = 0
+	// 使用 WaitGroup 等待 10 个 goroutine 完成
+	var wg sync.WaitGroup
+	wg.Add(10)
+	for i := 0; i < 10; i++ {
+		go func() {
+			defer wg.Done()
+			// 对变量count执行10次加1
+			for j := 0; j < 1000; j++ {
+				count++
+			}
+		}()
+	}
+	// 等待10个goroutine完成
+	wg.Wait()
+	fmt.Println(count)
+}
+
+func counterTest2() {
+	var count = 0
+	var mu sync.Mutex
+	// 使用 WaitGroup 等待 10 个 goroutine 完成
+	var wg sync.WaitGroup
+	wg.Add(10)
+	for i := 0; i < 10; i++ {
+		go func() {
+			defer wg.Done()
+			// 对变量count执行10次加1
+			for j := 0; j < 1000; j++ {
+				mu.Lock()
+				count++
+				mu.Unlock()
+			}
+		}()
+	}
+	// 等待10个goroutine完成
+	wg.Wait()
+	fmt.Println(count)
+}
+
+// 将 Mutex 嵌入到结构体中
+
+type Counter1 struct {
+	mu    sync.Mutex
+	Count uint
+}
+
+type Counter2 struct {
+	sync.Mutex
+	Count uint
+}
+
+func counterTest3() {
+	var counter Counter2
+	var wg sync.WaitGroup
+	wg.Add(10)
+	for i := 0; i < 10; i++ {
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 1000; j++ {
+				counter.Lock()
+				counter.Count++
+				counter.Unlock()
+			}
+		}()
+	}
+	wg.Wait()
+	fmt.Println(counter.Count)
 }
