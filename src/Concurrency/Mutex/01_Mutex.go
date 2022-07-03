@@ -19,10 +19,16 @@ import (
 
 */
 
+const (
+	mutexLocked = 1 << iota // mutex is locked
+	mutexWoken
+	mutexWaiterShift = iota
+)
+
 const a = 1 << iota
 
 func main() {
-	counterTest2()
+	//counterTest2()
 }
 
 func counterTest1() {

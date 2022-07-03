@@ -48,6 +48,11 @@ func ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	time.Sleep(time.Minute * 0)
 }
 
+func Health(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "code:0\n")
+	fmt.Fprintf(w, "msg:ceshi")
+}
+
 func main() {
 	port := flag.String("port", "8001", "http port")
 	flag.Parse()
@@ -56,6 +61,7 @@ func main() {
 	http.HandleFunc("/9", ServeHTTP)
 	http.HandleFunc("/test99", ServeHTTP)
 	http.HandleFunc("/test_new99", ServeHTTP)
+	http.HandleFunc("/health", Health)
 	err := http.ListenAndServe(":"+*port, nil)
 	if err != nil {
 		fmt.Println("server listen failed. err : ", err)
