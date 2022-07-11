@@ -17,7 +17,13 @@ Unlock 方法可以被任意的 goroutine 调用释放锁，即使是没持有�
 */
 
 func main() {
+	var mu sync.Mutex
+	a := 1
+	mu.Lock()
+	a++
+	mu.Unlock()
 
+	mu.Unlock()
 }
 
 type Foo struct {
