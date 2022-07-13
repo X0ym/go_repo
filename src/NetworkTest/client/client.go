@@ -83,10 +83,10 @@ func iptablesTest2(url string, times int, num int, body int) {
 }
 func main() {
 	//url := flag.String("url", "http://10.177.125.17:8001/proxytest_header", "http url")
-	url := flag.String("url", "http://10.177.123.78:8001/proxytest_back", "http url")
+	//url := flag.String("url", "http://10.177.123.78:8001/proxytest_back", "http url")
 	//url := flag.String("url", "http://127.0.0.1:8001/proxytest_chunk", "http url")
 	//url := flag.String("url", "http://10.177.125.17:8001/proxytest_chunk", "http url")
-	//url := flag.String("url", "http://127.0.0.1:2046/proxytest_back", "http url")
+	url := flag.String("url", "http://127.0.0.1:2046/proxytest_back", "http url")
 	//url := flag.String("url", "http://10.177.125.17:8001/proxytest_notReadBody", "http url")
 
 	times := flag.Int("times", 1, "execute times")

@@ -67,21 +67,21 @@ func ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func ServeHTTP2(w http.ResponseWriter, r *http.Request) {
-	log.Printf("[UPSTREAM]receive request %s\n", r.URL.String())
-	log.Printf("Content-Length: %v", r.ContentLength)
+	fmt.Println("[UPSTREAM]receive request ", r.URL.String())
+	fmt.Println("Content-Length: ", r.ContentLength)
 
 	now := time.Now()
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Println("server recv body failed")
+		fmt.Println("server recv body failed")
 	}
 	length := len(data)
-	log.Println("body 长度: ", length)
-
+	fmt.Println("body 长度: ", length)
+	fmt.Println(string(data))
 	w.Header().Set("Content-Length", strconv.Itoa(length))
 	w.Write(data)
 	time := time.Since(now)
-	log.Printf("读取body 并发送响应总耗时:%s", time.String())
+	fmt.Printf("读取body 并发送响应总耗时:%s\n", time.String())
 }
 
 func ServeHTTP3(w http.ResponseWriter, r *http.Request) {
@@ -101,9 +101,9 @@ func ServeHTTP3(w http.ResponseWriter, r *http.Request) {
 		panic("expected http.ResponseWriter to be an http.Flusher")
 	}
 
-	for i := 0; i < 200; i++ {
+	for i := 0; i < 10; i++ {
 		fmt.Fprintf(w, "chunk [%02d] data: %v %s", i, time.Now(), GetCode(10))
-		log.Println("chunk", i)
+		fmt.Println("chunk: ", i)
 		flusher.Flush()
 		time.Sleep(time.Millisecond * 1)
 	}
@@ -146,7 +146,7 @@ func main() {
 	http.HandleFunc("/proxytest_back", ServeHTTP2)
 	http.HandleFunc("/proxytest_chunk", ServeHTTP3)
 	http.HandleFunc("/proxytest_notReadBody", ServeHTTP4)
-	http.ListenAndServe(":8000", nil)
+	http.ListenAndServe(":8001", nil)
 }
 
 func GetCode(codeLen int) string {
