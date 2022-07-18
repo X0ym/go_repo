@@ -4,28 +4,84 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"flag"
 	"fmt"
+	"github.com/valyala/fasthttp"
 	"io"
 	"math/rand"
 	"net/http"
-	"sync"
+	"strconv"
 	"time"
 )
 
 func main() {
+	str := flag.String("str", "test2", "功能选择")
+	url := flag.String("url", "http://www.baidu.com", "set url")
+	j := flag.Int64("bodyLen", 20*1024, "flag int64 body len")
+	s := flag.Int64("chunkSize", 1024, "flag int64 chunk size")
+
+	flag.Parse()
+
+	fmt.Println("str=", *str)
+	if *str == "test1" {
+		fmt.Println("req body len=", *j)
+		fmt.Println("do test1")
+		test1(*url, *j)
+	}
+	if *str == "test2" {
+		fmt.Println("chunk size=", *s)
+		fmt.Println("do test2")
+		fmt.Println("url: ", *url)
+		test2(*url, *s)
+	}
+
+}
+
+func test1(url string, bodyLen int64) {
+	req1 := &fasthttp.Request{}
+	req1.SetRequestURI(url)
+	resp1 := &fasthttp.Response{}
+
+	req1.SetBody([]byte(getCode(bodyLen)))
+	req1.Header.Set("bodyLen", "20480")
+
+	if err := fasthttp.Do(req1, resp1); err != nil {
+		fmt.Println(err)
+		fmt.Println("请求失败")
+	}
+
+	fmt.Println("Response header:")
+	resp1.Header.VisitAll(func(key, value []byte) {
+		fmt.Printf("key:%s value:%s\n", string(key), string(value))
+	})
+
+	fmt.Println("Response body:")
+	body := resp1.Body()
+	fmt.Println(string(body))
+	fmt.Println("body len=", len(body))
+}
+
+func test2(url string, chunkSize int64) {
 	pr, pw := io.Pipe()
 	// 开协程写入大量数据
 	go func() {
 		for i := 0; i < 10; i++ {
-			code := GetCode(10)
+			code := getCode(chunkSize)
 			pw.Write([]byte(fmt.Sprintf("line:%d %s\r\n", i, code)))
 		}
 		pw.Close()
 	}()
 	// 传递Reader
-	resp, err := http.Post("http://10.176.134.159:8001/proxytest_chunk", "text/pain", pr)
+	client := http.Client{}
+	req, err := http.NewRequest("POST", url, pr)
 	if err != nil {
-		fmt.Println("请求失败")
+		fmt.Println(err)
+	}
+	req.Header.Set("Content-Type", "text/pain")
+	req.Header.Set("chunkSize", strconv.FormatInt(chunkSize, 10))
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("请求失败", err)
 	}
 	fmt.Println("StatusCode: ", resp.StatusCode)
 	fmt.Println("ContentLength: ", resp.ContentLength)
@@ -39,7 +95,7 @@ func main() {
 	fmt.Println("body len=", len(respBody))
 }
 
-func GetCode(codeLen int) string {
+func getCode(codeLen int64) string {
 	// 1. 定义原始字符串
 	rawStr := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_"
 	// 2. 定义一个buf，并且将buf交给bytes往buf中写数据
@@ -52,48 +108,6 @@ func GetCode(codeLen int) string {
 		b.WriteByte(rawStr[randNum])
 	}
 	return b.String()
-}
-
-func writeChunk(dst []byte, src []byte) []byte {
-	n := len(src)
-	dst = writeHexInt(dst, n)
-	dst = append(dst, strCRLF...)
-	dst = append(dst, src...)
-	dst = append(dst, strCRLF...)
-	return dst
-}
-
-const (
-	maxHexIntChars = 15
-	upperhex       = "0123456789ABCDEF"
-	lowerhex       = "0123456789abcdef"
-)
-
-var hexIntBufPool sync.Pool
-var strCRLF = []byte("\r\n")
-
-func writeHexInt(dst []byte, n int) []byte {
-	if n < 0 {
-		panic("BUG: int must be positive")
-	}
-
-	v := hexIntBufPool.Get()
-	if v == nil {
-		v = make([]byte, maxHexIntChars+1)
-	}
-	buf := v.([]byte)
-	i := len(buf) - 1
-	for {
-		buf[i] = lowerhex[n&0xf]
-		n >>= 4
-		if n == 0 {
-			break
-		}
-		i--
-	}
-	dst = append(dst, buf[i:]...)
-	hexIntBufPool.Put(v)
-	return dst
 }
 
 func readBodyChunked(r *bufio.Reader, maxBodySize int, dst []byte) ([]byte, error) {
@@ -244,8 +258,13 @@ var (
 	ErrBodyTooLarge   = errors.New("body size exceeds the given limit")
 )
 
+var strCRLF = []byte("\r\n")
+
 const (
-	hex2intTable = "\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x00\x01\x02\x03\x04\x05\x06\a\b\t\x10\x10\x10\x10\x10\x10\x10\n\v\f\r\x0e\x0f\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\n\v\f\r\x0e\x0f\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10"
+	hex2intTable   = "\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x00\x01\x02\x03\x04\x05\x06\a\b\t\x10\x10\x10\x10\x10\x10\x10\n\v\f\r\x0e\x0f\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\n\v\f\r\x0e\x0f\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10"
+	maxHexIntChars = 15
+	upperhex       = "0123456789ABCDEF"
+	lowerhex       = "0123456789abcdef"
 )
 
 // ErrBrokenChunk is returned when server receives a broken chunked body (Transfer-Encoding: chunked).

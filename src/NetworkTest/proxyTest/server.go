@@ -22,8 +22,8 @@ func init() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
 	fileName := "httpserver.log"
-	os.MkdirAll("/opt/yiming/httpserver/log", 0755)
-	path := path.Join("/opt/yiming/httpserver/log", fileName)
+	os.MkdirAll("/opt/httpserver/log", 0755)
+	path := path.Join("/opt/httpserver/log", fileName)
 	//打开文件，并且设置了文件打开的模式
 	logFile, _ := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 
@@ -32,24 +32,21 @@ func init() {
 }
 
 func ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Printf("[UPSTREAM]receive request %s\n", r.URL)
-	fmt.Printf("[UPSTREAM]receive request %s\n", r.URL)
+	log.Printf("[UPSTREAM] receive request %s\n", r.URL.String())
+	log.Println("Method:", r.Method)
+	log.Println("RemoteAddr:", r.RemoteAddr)
+	log.Println("Content-Length: ", r.ContentLength)
+
 	var data []byte
 	var err error
-	if r.Method == "POST" {
-		data, err = ioutil.ReadAll(r.Body)
-		log.Println(w, "request body:%s\n", string(data))
-		if err != nil {
-			log.Println("server recv failed. err:", err)
-		}
+	data, err = ioutil.ReadAll(r.Body)
+	log.Println("body len=", len(data))
+	if err != nil {
+		log.Println("server recv failed. err:", err)
 	}
-
-	//log.Println("server read body len:", len(data))
-	//log.Println("Method:", r.Method)
-	//log.Println("Host:", r.Host)
-	//log.Println("RemoteAddr:", r.RemoteAddr)
-	//log.Println("URL:", r.URL)
-	//log.Println()
+	if len(data) <= 1024 {
+		log.Println(string(data))
+	}
 
 	fmt.Fprintf(w, "Method: %s\n", r.Method)
 	fmt.Fprintf(w, "Protocol: %s\n", r.Proto)
@@ -63,12 +60,13 @@ func ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "succ\n")
 	fmt.Fprintf(w, "\nHeaders:\n")
 	r.Header.Write(w)
-
 }
 
 func ServeHTTP2(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("[UPSTREAM]receive request ", r.URL.String())
-	fmt.Println("Content-Length: ", r.ContentLength)
+	log.Println("[UPSTREAM] receive request ", r.URL.String())
+	log.Println("Method:", r.Method)
+	log.Println("RemoteAddr:", r.RemoteAddr)
+	log.Println("Content-Length: ", r.ContentLength)
 
 	now := time.Now()
 	data, err := ioutil.ReadAll(r.Body)
@@ -76,22 +74,30 @@ func ServeHTTP2(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("server recv body failed")
 	}
 	length := len(data)
-	fmt.Println("body 长度: ", length)
-	fmt.Println(string(data))
+	log.Println("body 长度: ", length)
+	if len(data) <= 1024 {
+		log.Println(string(data))
+	}
+
 	w.Header().Set("Content-Length", strconv.Itoa(length))
 	w.Write(data)
 	time := time.Since(now)
-	fmt.Printf("读取body 并发送响应总耗时:%s\n", time.String())
+	log.Printf("读取body 并发送响应总耗时:%s\n", time.String())
 }
 
 func ServeHTTP3(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[UPSTREAM]receive request %s\n", r.URL)
+	log.Println("Method:", r.Method)
+	log.Println("RemoteAddr:", r.RemoteAddr)
 	log.Println("Content-Length: ", r.ContentLength)
-	data, err := ioutil.ReadAll(r.Body)
+	chunkSize := r.Header.Get("chunkSize")
+	log.Println("recv req Header - ChunkSize=", chunkSize)
+	//var size int
+	size, err := strconv.Atoi(chunkSize)
 	if err != nil {
-		log.Println("server recv failed")
+		size = 1024
 	}
-	log.Println("body 长度: ", len(data))
+	log.Println("Response chunkSize = ", size)
 
 	w.Header().Set("Connection", "Keep-Alive")
 	w.Header().Set("Transfer-Encoding", "chunked")
@@ -102,17 +108,15 @@ func ServeHTTP3(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for i := 0; i < 10; i++ {
-		fmt.Fprintf(w, "chunk [%02d] data: %v %s", i, time.Now(), GetCode(10))
-		fmt.Println("chunk: ", i)
+		fmt.Fprintf(w, "chunk[%02d] %s", i, GetCode(size))
 		flusher.Flush()
 		time.Sleep(time.Millisecond * 1)
 	}
 }
 
 func ServeHTTP4(w http.ResponseWriter, r *http.Request) {
-	log.Printf("[UPSTREAM]receive request %s\n", r.URL)
+	log.Printf("[UPSTREAM]receive request %s\n", r.URL.String())
 
-	var data []byte
 	//var err error
 	//if r.Method == "POST" {
 	//	data, err = ioutil.ReadAll(r.Body)
@@ -121,8 +125,7 @@ func ServeHTTP4(w http.ResponseWriter, r *http.Request) {
 	//		log.Println("server recv failed. err:", err)
 	//	}
 	//}
-	fmt.Fprintf(w, "server read body len: %d\n", len(data))
-	log.Println("server read body len:", len(data))
+	log.Println("not read req body")
 
 	fmt.Fprintf(w, "Method: %s\n", r.Method)
 	fmt.Fprintf(w, "Protocol: %s\n", r.Proto)
@@ -140,9 +143,7 @@ func ServeHTTP4(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/fd/check", ServeHTTP)
 	http.HandleFunc("/proxytest_header", ServeHTTP)
-	http.HandleFunc("/test99", ServeHTTP)
 	http.HandleFunc("/proxytest_back", ServeHTTP2)
 	http.HandleFunc("/proxytest_chunk", ServeHTTP3)
 	http.HandleFunc("/proxytest_notReadBody", ServeHTTP4)
