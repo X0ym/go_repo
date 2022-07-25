@@ -17,6 +17,7 @@ func httpPost2(urlStr string, num int, body int) {
 	data := getCode(body)
 	//fmt.Printf("key=%s\n", data)
 	for {
+		fmt.Println("num=", num)
 		if num <= 0 {
 			break
 		}
@@ -26,8 +27,11 @@ func httpPost2(urlStr string, num int, body int) {
 		resp, err := http.PostForm(urlStr, url.Values{"key": {data}})
 		if err != nil {
 			fmt.Println("发送失败. err:", err)
+			num--
+			continue
 			//log.Fatalf("http post err: ", err)
 		}
+		fmt.Println("发送成功")
 
 		fmt.Println(resp.StatusCode)
 		resdata, err := io.ReadAll(resp.Body)
@@ -37,7 +41,7 @@ func httpPost2(urlStr string, num int, body int) {
 		times := time.Since(t1)
 		fmt.Println("ContentLength:", resp.ContentLength)
 		fmt.Println("总耗时: ", times)
-		fmt.Println("body: ", string(resdata))
+		//fmt.Println("body: ", string(resdata))
 		fmt.Println("res body len:", len(resdata))
 		time.Sleep(100 * time.Millisecond)
 		num--
@@ -86,12 +90,12 @@ func main() {
 	//url := flag.String("url", "http://10.177.123.78:8001/proxytest_back", "http url")
 	//url := flag.String("url", "http://127.0.0.1:8001/proxytest_chunk", "http url")
 	//url := flag.String("url", "http://10.177.125.17:8001/proxytest_chunk", "http url")
-	url := flag.String("url", "http://127.0.0.1:2046/proxytest_back", "http url")
+	url := flag.String("url", "http://10.177.123.78:8001/proxytest_back", "http url")
 	//url := flag.String("url", "http://10.177.125.17:8001/proxytest_notReadBody", "http url")
 
-	times := flag.Int("times", 1, "execute times")
+	times := flag.Int("times", 1, "goroutine execute times")
 	num := flag.Int("num", 1, "repeat num")
-	body := flag.Int("body", 20*1024*1024, "body length in byte")
+	body := flag.Int("body", 2000*1024, "body length in byte")
 	flag.Parse()
 	fmt.Println("url:", *url)
 	fmt.Println("goroutine:", *times)
